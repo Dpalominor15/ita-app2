@@ -1,5 +1,5 @@
 // Caché para uso sin conexión. Cambia VERSION al actualizar index.html.
-const VERSION = 'ita-app-1.0.0';
+const VERSION = 'ita-app-1.1.0';
 const FILES = ['./', './index.html', './manifest.webmanifest', './icon.svg'];
 
 self.addEventListener('install', e => {
