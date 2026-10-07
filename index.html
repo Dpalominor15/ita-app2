@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0b6e69">
-<meta name="description" content="Captura de ITA° de piel y cuestionario Fitzpatrick para estudios PPG">
+<meta name="description" content="Captura de ITA° de piel, escala Monk y cuestionario Fitzpatrick para estudios PPG">
 <title>ITA Piel</title>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
@@ -40,6 +40,7 @@ main{max-width:720px;margin:0 auto;padding:16px 16px 96px}
 .view{display:none}.view.on{display:block}
 h2{font-size:20px;margin:4px 0 12px}
 h3{font-size:16px;margin:18px 0 8px}
+h4{font-size:14px;margin:10px 0 6px}
 p{margin:6px 0}
 .muted{color:var(--muted)} .small{font-size:13px}
 .card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px;margin:12px 0}
@@ -71,6 +72,10 @@ td.num{font-variant-numeric:tabular-nums}
 .opts{display:grid;gap:6px}
 .opt{text-align:left;font-weight:500;min-height:44px;padding:10px 12px}
 .opt.sel{background:var(--accent-soft);border-color:var(--accent);color:var(--text);box-shadow:inset 0 0 0 1px var(--accent)}
+.mst{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+.mst button{padding:6px;min-height:0;display:flex;flex-direction:column;align-items:center;gap:4px;font-weight:600}
+.mst .sw{display:block;width:100%;aspect-ratio:1;border-radius:50%;border:1px solid rgba(0,0,0,.15)}
+.mst button.sel{border-color:var(--accent);box-shadow:inset 0 0 0 2px var(--accent);background:var(--accent-soft)}
 .stickybar{position:fixed;left:0;right:0;bottom:0;background:var(--surface);border-top:1px solid var(--border);padding:10px 16px calc(10px + env(safe-area-inset-bottom));z-index:6}
 .stickybar .inner{max-width:720px;margin:0 auto;display:flex;gap:10px;align-items:center}
 .stage{position:relative;width:100%;height:58vh;min-height:300px;background:#000;border-radius:12px;overflow:hidden;touch-action:manipulation}
@@ -82,10 +87,17 @@ td.num{font-variant-numeric:tabular-nums}
 .big{font-size:34px;font-weight:700;font-variant-numeric:tabular-nums;line-height:1.1}
 details summary{cursor:pointer;font-weight:600}
 .alert{border-radius:10px;padding:10px 12px;margin:10px 0;font-size:14px}
-.alert.warn{background:var(--warn-bg);color:var(--warn)} .alert.bad{background:var(--bad-bg);color:var(--bad)} .alert.ok{background:var(--ok-bg);color:var(--ok)}
+.alert.warn{background:var(--warn-bg);color:var(--warn)} .alert.bad{background:var(--bad-bg);color:var(--bad)} .alert.ok{background:var(--ok-bg);color:var(--ok)} .alert.info{background:var(--accent-soft);color:var(--text)}
 .shots{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}
 ol.steps{padding-left:20px;margin:6px 0} ol.steps li{margin:4px 0}
 input[type=range]{width:100%}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.grid3 label{margin-top:4px}
+.bar-row{display:grid;grid-template-columns:88px 1fr 30px;gap:8px;align-items:center;margin:5px 0;font-size:14px}
+.bar-track{height:14px;background:var(--surface-2);border-radius:4px;overflow:hidden}
+.bar{display:block;height:100%;background:var(--accent);border-radius:0 4px 4px 0}
+.bar-n{text-align:right;font-variant-numeric:tabular-nums;font-weight:600}
+.bar-row.zero .bar-n,.bar-row.zero .bar-lbl{color:var(--muted)}
 </style>
 </head>
 <body>
@@ -97,6 +109,7 @@ input[type=range]{width:100%}
 
 <!-- INICIO -->
 <section class="view" id="v-home">
+  <div class="card" id="session-card"></div>
   <div class="stats">
     <div class="stat"><b id="st-count">0</b><span>participantes guardados</span></div>
     <div class="stat"><b id="st-unexp">0</b><span>sin exportar</span></div>
@@ -104,19 +117,26 @@ input[type=range]{width:100%}
   <div id="home-alerts"></div>
   <button type="button" class="primary block" id="btn-new" style="margin-top:14px">Nuevo participante</button>
   <div class="row" style="margin-top:10px">
-    <button type="button" class="grow" id="btn-export">Exportar CSV</button>
+    <button type="button" class="grow" id="btn-export">Exportar participantes</button>
+    <button type="button" class="grow" id="btn-export-ses">Exportar sesiones</button>
+  </div>
+  <div class="row" style="margin-top:10px">
     <button type="button" class="grow" id="btn-config">Configuración</button>
   </div>
+
+  <h3>Distribución de la muestra</h3>
+  <div class="card" id="dist"></div>
 
   <details class="card">
     <summary>Protocolo de captura</summary>
     <ol class="steps small">
+      <li><b>Al inicio de cada día:</b> fija la cámara y toma la foto de calibración de sesión (tarjeta gris y, si la usas, el objeto de referencia).</li>
       <li><b>Sin flash.</b> Iluminación del laboratorio constante; sin luz solar directa ni sombras sobre el brazo.</li>
       <li>Antebrazo apoyado, <b>cara dorsal</b> hacia arriba. Punto: centrado entre radio y cúbito, <b>3 traveses de dedo</b> proximal a la articulación de la muñeca (mismo punto que el sensor PPG). Medir <b>antes</b> de colocar el sensor.</li>
-      <li>Celular paralelo a la piel, a distancia fija (usa un separador, p. ej. un tubo de 15 cm).</li>
-      <li>Tarjeta gris en el mismo plano que la piel, dentro del círculo amarillo.</li>
+      <li>Celular paralelo a la piel, a distancia fija (usa un soporte o separador).</li>
+      <li>Tarjeta gris en el mismo plano que la piel, dentro del círculo amarillo. Es obligatoria: sin ella la foto no se acepta.</li>
       <li>Evita vello denso, venas visibles, lunares y tatuajes dentro del círculo verde (puedes moverlo tocando la imagen).</li>
-      <li>Fija la exposición y el balance de blancos una vez por sesión (botón “Fijar cámara”) y no los cambies entre participantes.</li>
+      <li>Evalúa la escala Monk <b>antes</b> de ver el resultado del ITA.</li>
     </ol>
   </details>
 
@@ -136,7 +156,8 @@ input[type=range]{width:100%}
     <input type="text" id="c-site" autocomplete="off">
     <label for="c-photos">Fotos por participante</label>
     <select id="c-photos"><option>1</option><option>2</option><option selected>3</option><option>4</option><option>5</option></select>
-    <div class="check"><input type="checkbox" id="c-gray"><label for="c-gray" style="margin:0">Usar tarjeta gris 18 % en cada foto</label></div>
+    <div class="check"><input type="checkbox" id="c-ref"><label for="c-ref" style="margin:0">Usar objeto de referencia en la calibración de sesión</label></div>
+    <p class="small muted" style="margin-top:-6px">Un objeto de color fijo (p. ej. una muestra impresa tono piel) que siempre se fotografía igual. Sirve para detectar deriva entre días.</p>
     <div class="check"><input type="checkbox" id="c-lock"><label for="c-lock" style="margin:0">Reaplicar valores de cámara fijados al abrir la cámara</label></div>
     <label for="c-skinr">Tamaño del círculo de piel: <span id="c-skinr-v"></span></label>
     <input type="range" id="c-skinr" min="10" max="45" step="1">
@@ -151,7 +172,7 @@ input[type=range]{width:100%}
   </div>
   <div class="card">
     <h3 style="margin-top:0">Datos</h3>
-    <p class="small muted">Los datos viven solo en este celular. Exporta el CSV antes de borrar.</p>
+    <p class="small muted">Los datos viven solo en este celular. Exporta los CSV antes de borrar.</p>
     <button type="button" class="danger" id="c-wipe">Borrar todos los registros</button>
   </div>
   <p class="small muted" id="c-version"></p>
@@ -164,7 +185,6 @@ input[type=range]{width:100%}
     <label for="p-id">ID del participante</label>
     <input type="text" id="p-id" placeholder="P-0001" autocomplete="off" autocapitalize="characters" spellcheck="false">
     <p class="small muted">Usa el mismo ID en el archivo de la grabación PPG. La fecha y hora se guardan automáticamente.</p>
-    <p class="small" id="p-time"></p>
   </div>
   <div class="row">
     <button type="button" class="grow" id="p-cancel">Cancelar</button>
@@ -172,13 +192,18 @@ input[type=range]{width:100%}
   </div>
 </section>
 
-<!-- FITZPATRICK -->
+<!-- FITZPATRICK + MONK -->
 <section class="view" id="v-fitz">
   <h2>Cuestionario Fitzpatrick</h2>
   <p class="small muted">Léelo al participante. Toca una respuesta por pregunta.</p>
   <div id="fitz-qs"></div>
+  <div class="q">
+    <h4>Escala Monk (MST) · la evalúa el operador</h4>
+    <p class="small muted">Compara el sitio de medición del antebrazo con los tonos, con la misma luz. Lo ideal es una tarjeta MST impresa: los colores de pantalla varían entre celulares.</p>
+    <div class="mst" id="mst"></div>
+  </div>
   <div style="height:70px"></div>
-  <div class="stickybar" id="fitz-bar">
+  <div class="stickybar">
     <div class="inner">
       <div class="grow small"><span id="fitz-progress"></span><br><b id="fitz-live"></b></div>
       <button type="button" class="primary" id="fitz-next" disabled>Ir a la foto</button>
@@ -195,6 +220,7 @@ input[type=range]{width:100%}
       <button type="button" id="mv-gray">Mover tarjeta</button>
     </div>
   </div>
+  <div class="alert info small" id="cam-instr" hidden></div>
   <div class="stage" id="stage">
     <video id="video" playsinline muted autoplay></video>
     <canvas id="shot" hidden></canvas>
@@ -222,7 +248,7 @@ input[type=range]{width:100%}
 
   <div class="shots" id="shots"></div>
   <div class="row">
-    <button type="button" class="link" id="btn-cam-back">← Volver al cuestionario</button>
+    <button type="button" class="link" id="btn-cam-back">← Volver</button>
     <span class="grow"></span>
     <button type="button" class="link" id="btn-finish-early" hidden>Terminar con estas fotos →</button>
   </div>
@@ -232,6 +258,18 @@ input[type=range]{width:100%}
 <section class="view" id="v-sum">
   <h2>Resumen</h2>
   <div class="card" id="sum-body"></div>
+  <details class="card" id="co-box">
+    <summary>Validación con colorímetro (opcional)</summary>
+    <p class="small muted">Mide el mismo punto del antebrazo con el colorímetro y anota su lectura. Deja vacío si este participante no está en la submuestra de validación.</p>
+    <label for="co-inst">Instrumento</label>
+    <input type="text" id="co-inst" placeholder="p. ej. Konica Minolta CR-400" autocomplete="off">
+    <div class="grid3">
+      <div><label for="co-L">L*</label><input type="text" inputmode="decimal" id="co-L" autocomplete="off"></div>
+      <div><label for="co-a">a*</label><input type="text" inputmode="decimal" id="co-a" autocomplete="off"></div>
+      <div><label for="co-b">b*</label><input type="text" inputmode="decimal" id="co-b" autocomplete="off"></div>
+    </div>
+    <p class="small" id="co-out"></p>
+  </details>
   <label for="sum-notes">Notas (opcional)</label>
   <textarea id="sum-notes" placeholder="Vello, tatuaje cercano, crema, etc."></textarea>
   <div class="row" style="margin-top:12px">
@@ -247,8 +285,9 @@ input[type=range]{width:100%}
 (() => {
 'use strict';
 
-const APP_VERSION = '1.0.0';
+const APP_VERSION = '1.1.0';
 const K_REC = 'itaapp.records.v1';
+const K_SES = 'itaapp.sessions.v1';
 const K_CFG = 'itaapp.config.v1';
 
 /* ---------- almacenamiento (siempre protegido) ---------- */
@@ -260,30 +299,35 @@ const store = {
 const DEFAULTS = {
   operator: '', device: '',
   site: 'Antebrazo distal, cara dorsal, entre radio y cúbito, 3 traveses de dedo proximal a la muñeca',
-  photos: 3, grayCard: true, reapplyLock: true,
+  photos: 3, useRef: false, reapplyLock: true,
   skinR: 0.22, grayR: 0.10,
   skinPos: {x: 0.5, y: 0.5}, grayPos: {x: 0.5, y: 0.85},
-  camLock: null
+  camLock: null, instrument: ''
 };
 let cfg = Object.assign({}, DEFAULTS, store.get(K_CFG, {}));
 let records = store.get(K_REC, []);
+let sessions = store.get(K_SES, []);
 let storageOk = store.set(K_REC, records);
-let cur = null;
+let cur = null;              // participante en curso
+let purpose = 'participant'; // 'participant' | 'session'
+let afterCalib = false;      // abrir un participante nuevo al terminar la calibración
 
 const $ = s => document.querySelector(s);
 const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const fmt = (v, d=1) => (v == null || !isFinite(v)) ? '—' : v.toFixed(d);
+const num = s => { const v = parseFloat(String(s || '').trim().replace(',', '.')); return isFinite(v) ? v : null; };
 
 function saveCfg(){ store.set(K_CFG, cfg); }
 function saveRecords(){
-  storageOk = store.set(K_REC, records);
-  if (!storageOk) alert('No se pudo guardar en el almacenamiento del navegador. Exporta el CSV ahora para no perder datos.');
+  storageOk = store.set(K_REC, records) && store.set(K_SES, sessions);
+  if (!storageOk) alert('No se pudo guardar en el almacenamiento del navegador. Exporta los CSV ahora para no perder datos.');
 }
 function isoLocal(d){
   const p = n => String(n).padStart(2,'0');
   const off = -d.getTimezoneOffset(), s = off >= 0 ? '+' : '-', a = Math.abs(off);
   return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}${s}${p(Math.floor(a/60))}:${p(a%60)}`;
 }
+const today = () => isoLocal(new Date()).slice(0, 10);
 
 /* ---------- colorimetría: sRGB → CIE L*a*b* (D65) → ITA° ---------- */
 const LIN = new Float32Array(256);
@@ -300,6 +344,7 @@ function linToLab(r, g, b){
 const LfromY = Y => Y > EPS ? 116*Math.cbrt(Y) - 16 : KAP*Y;
 // ITA° = arctan((L* − 50) / b*) · 180/π  (atan2 coincide cuando b* > 0)
 const itaDeg = (L, b) => Math.atan2(L - 50, b) * 180 / Math.PI;
+const dE76 = (p, q) => Math.sqrt((p.L-q.L)**2 + (p.a-q.a)**2 + (p.b-q.b)**2);
 
 // Chardon et al. 1991 / Del Bino et al. 2006
 const ITA_CATS = [
@@ -363,19 +408,26 @@ function robustMean(s){
   return { r: r/c, g: g/c, b: b/c, kept: c, sdL: Math.sqrt(Math.max(0, sL2/c - mL*mL)) };
 }
 
+// [nivel, texto]. 'block' impide aceptar la foto.
 const FLAG_INFO = {
-  roi_pequena:          ['bad',  'Círculo de piel muy pequeño'],
+  roi_pequena:          ['block','Círculo de piel muy pequeño'],
   piel_saturada:        ['bad',  'Piel sobreexpuesta (píxeles saturados)'],
   piel_subexpuesta:     ['bad',  'Piel subexpuesta (muy oscura)'],
   piel_no_uniforme:     ['warn', 'Piel poco uniforme (vello, sombra o vena)'],
-  tarjeta_saturada:     ['bad',  'Tarjeta gris saturada'],
-  tarjeta_oscura:       ['bad',  'Tarjeta gris no detectada o muy oscura'],
+  tarjeta_saturada:     ['block','Tarjeta gris saturada'],
+  tarjeta_oscura:       ['block','Tarjeta gris no detectada o muy oscura'],
   tarjeta_no_uniforme:  ['warn', 'Tarjeta gris con sombra o reflejo'],
+  tarjeta_no_gris:      ['block','El círculo amarillo no está sobre la tarjeta gris'],
+  tarjeta_dudosa:       ['warn', 'La tarjeta tiene tinte de color: revisa la luz o que el círculo esté sobre ella'],
   correccion_extrema:   ['warn', 'Corrección de color muy fuerte'],
-  sin_tarjeta_gris:     ['warn', 'Sin tarjeta gris: L* depende de la exposición'],
   b_bajo_ita_inestable: ['bad',  'b* ≤ 1: ITA inestable'],
-  variabilidad_alta:    ['warn', 'Las fotos difieren más de 3° de ITA']
+  variabilidad_alta:    ['warn', 'Las fotos difieren más de 3° de ITA'],
+  deriva_exposicion:    ['warn', 'La tarjeta gris cambió más de 3 L* respecto a la sesión base'],
+  deriva_referencia:    ['warn', 'El objeto de referencia cambió respecto a la sesión base'],
+  camara_sin_fijar:     ['warn', 'Cámara sin fijar']
 };
+const lvl = f => (FLAG_INFO[f] || ['warn'])[0];
+const blockingFlags = flags => flags.filter(f => lvl(f) === 'block');
 
 function analyze(canvas){
   const W = canvas.width, H = canvas.height, m = Math.min(W, H);
@@ -383,35 +435,40 @@ function analyze(canvas){
   const flags = [];
   const skin = sampleCircle(ctx, W, H, cfg.skinPos.x*W, cfg.skinPos.y*H, cfg.skinR*m);
   const sk = robustMean(skin);
-  if (!sk || skin.n < 500) flags.push('roi_pequena');
-  if (!sk) return { ok: false, flags };
-  if (skin.sat/skin.n > 0.005) flags.push('piel_saturada');
-  if (skin.dark/skin.n > 0.05) flags.push('piel_subexpuesta');
-  if (sk.sdL > 5) flags.push('piel_no_uniforme');
-
-  let gains = [1, 1, 1], grayUsed = false, gray = null;
-  if (cfg.grayCard){
-    const gs = sampleCircle(ctx, W, H, cfg.grayPos.x*W, cfg.grayPos.y*H, cfg.grayR*m);
-    gray = robustMean(gs);
-    if (!gray || gray.kept < 50 || Math.min(gray.r, gray.g, gray.b) < 0.01){
-      flags.push('tarjeta_oscura');
-    } else {
-      if (gs.sat/gs.n > 0.005) flags.push('tarjeta_saturada');
-      if (gray.sdL > 4) flags.push('tarjeta_no_uniforme');
-      // Corrección diagonal (von Kries) en RGB lineal: la tarjeta 18 % pasa a ser gris neutro de reflectancia 0,18
-      gains = [0.18/gray.r, 0.18/gray.g, 0.18/gray.b];
-      if (gains.some(g => g > 5 || g < 0.2)) flags.push('correccion_extrema');
-      grayUsed = true;
-    }
-  } else {
-    flags.push('sin_tarjeta_gris');
+  const skinOk = !!sk && skin.n >= 500;
+  if (!skinOk) flags.push('roi_pequena');
+  else {
+    if (skin.sat/skin.n > 0.005) flags.push('piel_saturada');
+    if (skin.dark/skin.n > 0.05) flags.push('piel_subexpuesta');
+    if (sk.sdL > 5) flags.push('piel_no_uniforme');
   }
+
+  // Tarjeta gris 18 % (obligatoria)
+  let gains = [1, 1, 1], grayUsed = false, grayRaw = null;
+  const gs = sampleCircle(ctx, W, H, cfg.grayPos.x*W, cfg.grayPos.y*H, cfg.grayR*m);
+  const gray = robustMean(gs);
+  if (!gray || gray.kept < 50 || Math.min(gray.r, gray.g, gray.b) < 0.01){
+    flags.push('tarjeta_oscura');
+  } else {
+    grayRaw = Object.assign({ r: gray.r, g: gray.g, b: gray.b }, linToLab(gray.r, gray.g, gray.b));
+    if (gs.sat/gs.n > 0.005) flags.push('tarjeta_saturada');
+    if (gray.sdL > 4) flags.push('tarjeta_no_uniforme');
+    // Una tarjeta gris casi no tiene croma; la piel sí (a*, b* ≈ 10–25)
+    const chroma = Math.hypot(grayRaw.a, grayRaw.b);
+    if (chroma > 20) flags.push('tarjeta_no_gris');
+    else if (chroma > 12) flags.push('tarjeta_dudosa');
+    // Corrección diagonal (von Kries) en RGB lineal: la tarjeta pasa a ser gris neutro de reflectancia 0,18
+    gains = [0.18/gray.r, 0.18/gray.g, 0.18/gray.b];
+    if (gains.some(g => g > 5 || g < 0.2)) flags.push('correccion_extrema');
+    grayUsed = true;
+  }
+  if (!skinOk) return { ok: false, flags, grayRaw, gains, grayUsed, W, H };
   const raw = linToLab(sk.r, sk.g, sk.b);
   const lab = linToLab(sk.r*gains[0], sk.g*gains[1], sk.b*gains[2]);
   if (lab.b <= 1) flags.push('b_bajo_ita_inestable');
   return {
     ok: true, L: lab.L, a: lab.a, b: lab.b, ITA: itaDeg(lab.L, lab.b),
-    ITA_uncorrected: itaDeg(raw.L, raw.b), grayUsed, gains, flags,
+    ITA_uncorrected: itaDeg(raw.L, raw.b), grayUsed, grayRaw, gains, flags,
     nPixels: skin.n, sdL: sk.sdL, W, H
   };
 }
@@ -434,13 +491,35 @@ function fitzType(score){
   if (score <= 6) return 1; if (score <= 13) return 2; if (score <= 20) return 3;
   if (score <= 27) return 4; if (score <= 34) return 5; return 6;
 }
+// Monk Skin Tone Scale (Google, CC-BY 4.0) — valores de referencia sRGB
+const MST = ['#f6ede4','#f3e7db','#f7ead0','#eadaba','#d7bd96','#a07e56','#825c43','#604134','#3a312a','#292420'];
+
+/* ---------- sesiones de calibración ---------- */
+function activeSession(){
+  const d = today();
+  for (let i = sessions.length - 1; i >= 0; i--){
+    const s = sessions[i];
+    if (s.date === d && s.device_label === cfg.device) return s;
+  }
+  return null;
+}
+function baselineSession(){
+  return sessions.find(s => s.device_label === cfg.device) || null;
+}
+function startCalibration(thenNew){
+  afterCalib = !!thenNew;
+  purpose = 'session';
+  cur = null;
+  show('cam');
+}
 
 /* ---------- navegación ---------- */
 const VIEWS = ['home','config','id','fitz','cam','sum'];
 function show(v){
   VIEWS.forEach(x => $('#v-'+x).classList.toggle('on', x === v));
   if (v !== 'cam') stopCamera();
-  $('#hdr-crumb').textContent = cur && v !== 'home' && v !== 'config' ? cur.participant_id : '';
+  $('#hdr-crumb').textContent = v === 'cam' && purpose === 'session' ? 'Calibración'
+    : (cur && v !== 'home' && v !== 'config' ? cur.participant_id : '');
   window.scrollTo(0, 0);
   if (v === 'home') renderHome();
   if (v === 'config') renderConfig();
@@ -449,18 +528,49 @@ function show(v){
 }
 
 /* ---------- inicio ---------- */
+function renderSession(){
+  const s = activeSession();
+  if (!s){
+    $('#session-card').innerHTML = `<div class="row"><div class="grow"><b>Sin calibración hoy</b><br><span class="small muted">Se pide antes del primer participante del día.</span></div>
+      <button type="button" class="primary" data-act="calib">Calibrar sesión</button></div>`;
+    return;
+  }
+  const flags = s.quality_flags ? s.quality_flags.split(';') : [];
+  $('#session-card').innerHTML = `<div class="row"><div class="grow"><b>Sesión ${esc(s.session_id)}</b><br>
+    <span class="small muted">Calibrada ${esc(s.timestamp.slice(11,16))} · tarjeta L* ${fmt(s.gray_raw_L)}${s.ref_used ? ' · referencia ITA ' + fmt(s.ref_ITA) + '°' : ''}</span></div>
+    <button type="button" data-act="calib">Recalibrar</button></div>
+    <div>${flagBadges(flags) || '<span class="badge b-ok">Sin deriva</span>'}</div>`;
+}
+$('#session-card').addEventListener('click', e => { if (e.target.getAttribute('data-act') === 'calib') startCalibration(false); });
+
+function barsHtml(title, items){
+  const max = Math.max(1, ...items.map(i => i.n));
+  const empty = items.filter(i => !i.n).map(i => i.label);
+  return `<h4>${esc(title)}</h4>` + items.map(i =>
+    `<div class="bar-row${i.n ? '' : ' zero'}" title="${esc(i.label)}: ${i.n}"><span class="bar-lbl">${esc(i.label)}</span>
+      <span class="bar-track"><span class="bar" style="width:${(i.n/max*100).toFixed(1)}%"></span></span><span class="bar-n">${i.n}</span></div>`).join('')
+    + (records.length && empty.length ? `<p class="small muted">Sin participantes: ${esc(empty.join(', '))}</p>` : '');
+}
+function renderDist(){
+  if (!records.length){ $('#dist').innerHTML = '<p class="muted small">Aparecerá al guardar participantes.</p>'; return; }
+  const ita = ITA_CATS.map(c => ({ label: c.es, n: records.filter(r => r.ITA_category === c.code).length }));
+  const fz = ROMAN.map((r, i) => ({ label: 'Tipo ' + r, n: records.filter(x => x.fitz_type_num === i+1).length }));
+  const ms = MST.map((_, i) => ({ label: 'MST ' + (i+1), n: records.filter(x => x.monk_mst === i+1).length }));
+  $('#dist').innerHTML = barsHtml('Categoría ITA', ita) + barsHtml('Fitzpatrick', fz) + barsHtml('Escala Monk', ms);
+}
 function renderHome(){
+  renderSession();
   $('#st-count').textContent = records.length;
-  const unexp = records.filter(r => !r._exported).length;
-  $('#st-unexp').textContent = unexp;
+  $('#st-unexp').textContent = records.filter(r => !r._exported).length;
   let alerts = '';
-  if (!storageOk) alerts += `<div class="alert bad">El navegador no permite guardar datos (¿modo incógnito?). Exporta el CSV después de cada participante.</div>`;
+  if (!storageOk) alerts += `<div class="alert bad">El navegador no permite guardar datos (¿modo incógnito?). Exporta los CSV después de cada participante.</div>`;
   if (!window.isSecureContext) alerts += `<div class="alert warn">Página sin HTTPS: la cámara en vivo no funcionará. Puedes usar “Usar app de cámara”, o publicar la app con HTTPS.</div>`;
   if (!cfg.device) alerts += `<div class="alert warn">Pon una etiqueta al celular en Configuración (va en cada registro del CSV).</div>`;
   $('#home-alerts').innerHTML = alerts;
+  renderDist();
   const last = records.slice(-10).reverse();
-  $('#recent').innerHTML = last.length ? `<table><thead><tr><th>ID</th><th>Hora</th><th>ITA°</th><th>Fitz</th><th></th></tr></thead><tbody>${
-    last.map(r => `<tr><td>${esc(r.participant_id)}</td><td class="small">${esc(r.timestamp.slice(5,16).replace('T',' '))}</td><td class="num">${fmt(r.ITA_mean)} <span class="small muted">${esc(r.ITA_category_es)}</span></td><td>${esc(r.fitz_type)}</td><td><button type="button" class="link" data-del="${esc(r.uid)}" aria-label="Borrar ${esc(r.participant_id)}">Borrar</button></td></tr>`).join('')
+  $('#recent').innerHTML = last.length ? `<table><thead><tr><th>ID</th><th>Hora</th><th>ITA°</th><th>Fitz</th><th>MST</th><th></th></tr></thead><tbody>${
+    last.map(r => `<tr><td>${esc(r.participant_id)}</td><td class="small">${esc(r.timestamp.slice(5,16).replace('T',' '))}</td><td class="num">${fmt(r.ITA_mean)} <span class="small muted">${esc(r.ITA_category_es)}</span></td><td>${esc(r.fitz_type)}</td><td class="num">${esc(r.monk_mst)}</td><td><button type="button" class="link" data-del="${esc(r.uid)}" aria-label="Borrar ${esc(r.participant_id)}">Borrar</button></td></tr>`).join('')
   }</tbody></table>` : '<p class="muted small">Aún no hay registros.</p>';
 }
 $('#recent').addEventListener('click', e => {
@@ -472,14 +582,21 @@ $('#recent').addEventListener('click', e => {
   }
 });
 $('#btn-new').onclick = () => {
-  cur = { uid: Date.now().toString(36) + Math.random().toString(36).slice(2,6), participant_id: '', timestamp: '', fitz: Array(FITZ.length).fill(null), shots: [], notes: '' };
+  if (!activeSession()){
+    alert('Antes del primer participante del día hay que calibrar la sesión. Se abrirá la cámara.');
+    startCalibration(true);
+    return;
+  }
+  purpose = 'participant';
+  cur = { uid: Date.now().toString(36) + Math.random().toString(36).slice(2,6), participant_id: '', timestamp: '',
+          fitz: Array(FITZ.length).fill(null), monk: null, shots: [], notes: '', colo: { inst: cfg.instrument, L: '', a: '', b: '' } };
   $('#p-id').value = '';
-  $('#p-time').textContent = '';
   show('id');
   setTimeout(() => $('#p-id').focus(), 50);
 };
 $('#btn-config').onclick = () => show('config');
-$('#btn-export').onclick = exportCSV;
+$('#btn-export').onclick = () => exportCSV(records, CSV_COLS, 'participantes', 'No hay participantes para exportar.');
+$('#btn-export-ses').onclick = () => exportCSV(sessions, SES_COLS, 'sesiones', 'No hay sesiones para exportar.');
 
 /* ---------- configuración ---------- */
 function renderConfig(){
@@ -487,7 +604,7 @@ function renderConfig(){
   $('#c-device').value = cfg.device;
   $('#c-site').value = cfg.site;
   $('#c-photos').value = String(cfg.photos);
-  $('#c-gray').checked = cfg.grayCard;
+  $('#c-ref').checked = cfg.useRef;
   $('#c-lock').checked = cfg.reapplyLock;
   $('#c-skinr').value = Math.round(cfg.skinR*100); $('#c-skinr-v').textContent = Math.round(cfg.skinR*100) + ' %';
   $('#c-grayr').value = Math.round(cfg.grayR*100); $('#c-grayr-v').textContent = Math.round(cfg.grayR*100) + ' %';
@@ -501,7 +618,7 @@ $('#c-save').onclick = () => {
   cfg.device = $('#c-device').value.trim();
   cfg.site = $('#c-site').value.trim();
   cfg.photos = parseInt($('#c-photos').value, 10) || 3;
-  cfg.grayCard = $('#c-gray').checked;
+  cfg.useRef = $('#c-ref').checked;
   cfg.reapplyLock = $('#c-lock').checked;
   cfg.skinR = parseInt($('#c-skinr').value, 10)/100;
   cfg.grayR = parseInt($('#c-grayr').value, 10)/100;
@@ -510,10 +627,10 @@ $('#c-save').onclick = () => {
 $('#c-cancel').onclick = () => show('home');
 $('#c-forget').onclick = () => { cfg.camLock = null; saveCfg(); renderConfig(); };
 $('#c-wipe').onclick = () => {
-  const unexp = records.filter(r => !r._exported).length;
-  if (!confirm(`¿Borrar ${records.length} registros de este celular?` + (unexp ? `\n\n${unexp} NO se han exportado.` : ''))) return;
+  const unexp = records.filter(r => !r._exported).length + sessions.filter(s => !s._exported).length;
+  if (!confirm(`¿Borrar ${records.length} participantes y ${sessions.length} sesiones de este celular?` + (unexp ? `\n\n${unexp} registros NO se han exportado.` : ''))) return;
   if (!confirm('Esta acción no se puede deshacer. ¿Confirmas?')) return;
-  records = []; saveRecords(); show('home');
+  records = []; sessions = []; saveRecords(); show('home');
 };
 
 /* ---------- participante ---------- */
@@ -530,12 +647,14 @@ $('#p-next').onclick = () => {
 };
 $('#p-id').addEventListener('keydown', e => { if (e.key === 'Enter') $('#p-next').click(); });
 
-/* ---------- Fitzpatrick ---------- */
+/* ---------- Fitzpatrick + Monk ---------- */
 function renderFitz(){
   $('#fitz-qs').innerHTML = FITZ.map((f, qi) => `
     <div class="q"><h4>${qi+1}. ${esc(f.q)}</h4><div class="opts">
       ${f.o.map((o, v) => `<button type="button" class="opt${cur.fitz[qi] === v ? ' sel' : ''}" data-q="${qi}" data-v="${v}">${esc(o)}</button>`).join('')}
     </div></div>`).join('');
+  $('#mst').innerHTML = MST.map((hex, i) =>
+    `<button type="button" data-m="${i+1}" class="${cur.monk === i+1 ? 'sel' : ''}" aria-label="Monk ${i+1}"><span class="sw" style="background:${hex}"></span>${i+1}</button>`).join('');
   updateFitzBar();
 }
 $('#fitz-qs').addEventListener('click', e => {
@@ -547,6 +666,12 @@ $('#fitz-qs').addEventListener('click', e => {
   const next = b.closest('.q').nextElementSibling;
   if (next && cur.fitz[qi+1] == null) next.scrollIntoView({ behavior: 'smooth', block: 'center' });
 });
+$('#mst').addEventListener('click', e => {
+  const b = e.target.closest('button[data-m]'); if (!b) return;
+  cur.monk = +b.dataset.m;
+  $('#mst').querySelectorAll('button').forEach(x => x.classList.toggle('sel', x === b));
+  updateFitzBar();
+});
 function fitzResult(){
   const done = cur.fitz.filter(v => v != null).length;
   const score = cur.fitz.reduce((s, v) => s + (v || 0), 0);
@@ -554,11 +679,11 @@ function fitzResult(){
 }
 function updateFitzBar(){
   const r = fitzResult();
-  $('#fitz-progress').textContent = `${r.done}/${FITZ.length} respondidas`;
+  $('#fitz-progress').textContent = `${r.done}/${FITZ.length} respondidas · Monk ${cur.monk ? 'MST ' + cur.monk : 'pendiente'}`;
   $('#fitz-live').textContent = r.type ? `Puntaje ${r.score} → Tipo ${ROMAN[r.type-1]}` : '';
-  $('#fitz-next').disabled = !r.type;
+  $('#fitz-next').disabled = !(r.type && cur.monk);
 }
-$('#fitz-next').onclick = () => show('cam');
+$('#fitz-next').onclick = () => { purpose = 'participant'; show('cam'); };
 
 /* ---------- cámara ---------- */
 const video = $('#video'), shotCv = $('#shot'), overlay = $('#overlay');
@@ -566,6 +691,7 @@ const cam = { stream: null, track: null, caps: {}, settings: {} };
 let mode = 'live';           // 'live' | 'review'
 let moveTarget = 'skin';
 let pending = null;          // { canvas, source, cam, result }
+let liveMsg = '';
 
 function stageDims(){
   if (mode === 'review' && pending) return [pending.canvas.width, pending.canvas.height];
@@ -581,25 +707,26 @@ function drawOverlay(){
   const m = Math.min(W, H), sw = Math.max(2, m*0.009), fs = Math.max(14, m*0.065);
   const sx = cfg.skinPos.x*W, sy = cfg.skinPos.y*H, sr = cfg.skinR*m;
   const gx = cfg.grayPos.x*W, gy = cfg.grayPos.y*H, gr = cfg.grayR*m;
+  const showSkin = purpose === 'participant' || cfg.useRef;
+  const skinLbl = purpose === 'session' ? 'REFERENCIA' : 'PIEL';
   overlay.setAttribute('viewBox', `0 0 ${W} ${H}`);
   const lbl = (x, y, t, c) => `<text x="${x}" y="${y}" fill="${c}" font-size="${fs}" font-weight="700" text-anchor="middle" stroke="#000" stroke-width="${fs*0.18}" paint-order="stroke" font-family="system-ui,sans-serif">${t}</text>`;
   overlay.innerHTML = `
     <defs><mask id="hole"><rect width="${W}" height="${H}" fill="#fff"/>
-      <circle cx="${sx}" cy="${sy}" r="${sr}" fill="#000"/>
-      ${cfg.grayCard ? `<circle cx="${gx}" cy="${gy}" r="${gr}" fill="#000"/>` : ''}
+      ${showSkin ? `<circle cx="${sx}" cy="${sy}" r="${sr}" fill="#000"/>` : ''}
+      <circle cx="${gx}" cy="${gy}" r="${gr}" fill="#000"/>
     </mask></defs>
     <rect width="${W}" height="${H}" fill="#000" fill-opacity="0.35" mask="url(#hole)"/>
-    <circle cx="${sx}" cy="${sy}" r="${sr}" fill="none" stroke="#00e0c6" stroke-width="${sw}"/>
-    ${lbl(sx, sy - sr - fs*0.4, 'PIEL', '#00e0c6')}
-    ${cfg.grayCard ? `<circle cx="${gx}" cy="${gy}" r="${gr}" fill="none" stroke="#ffd400" stroke-width="${sw}" stroke-dasharray="${sw*3} ${sw*2}"/>
-      ${lbl(gx, gy - gr - fs*0.4, 'TARJETA GRIS', '#ffd400')}` : ''}`;
+    ${showSkin ? `<circle cx="${sx}" cy="${sy}" r="${sr}" fill="none" stroke="#00e0c6" stroke-width="${sw}"/>
+      ${lbl(sx, sy - sr - fs*0.4, skinLbl, '#00e0c6')}` : ''}
+    <circle cx="${gx}" cy="${gy}" r="${gr}" fill="none" stroke="#ffd400" stroke-width="${sw}" stroke-dasharray="${sw*3} ${sw*2}"/>
+    ${lbl(gx, gy - gr - fs*0.4, 'TARJETA GRIS', '#ffd400')}`;
 }
 overlay.addEventListener('pointerdown', e => {
   const [W, H] = stageDims(); if (!W) return;
   const ctm = overlay.getScreenCTM(); if (!ctm) return;
   const pt = overlay.createSVGPoint(); pt.x = e.clientX; pt.y = e.clientY;
   const p = pt.matrixTransform(ctm.inverse());
-  if (moveTarget === 'gray' && !cfg.grayCard) return;
   const key = moveTarget === 'gray' ? 'grayPos' : 'skinPos';
   const r = moveTarget === 'gray' ? cfg.grayR : cfg.skinR;
   cfg[key] = clampPos({ x: p.x/W, y: p.y/H }, r, W, H);
@@ -610,12 +737,17 @@ function setMove(t){ moveTarget = t; $('#mv-skin').classList.toggle('sel', t ===
 $('#mv-skin').onclick = () => setMove('skin');
 $('#mv-gray').onclick = () => setMove('gray');
 
-let liveMsg = '';
 function stageMsg(t){ liveMsg = t || ''; const m = $('#stage-msg'); m.hidden = !liveMsg || mode !== 'live'; m.textContent = liveMsg; }
 
 function enterCam(){
-  setMove('skin');
-  $('#mv-gray').hidden = !cfg.grayCard;
+  const ses = purpose === 'session';
+  setMove(ses && !cfg.useRef ? 'gray' : 'skin');
+  $('#mv-skin').hidden = ses && !cfg.useRef;
+  $('#mv-skin').textContent = ses ? 'Mover referencia' : 'Mover piel';
+  const ci = $('#cam-instr');
+  ci.hidden = !ses;
+  ci.innerHTML = ses ? `<b>Calibración de sesión.</b> 1) Monta el celular en el soporte con la luz de la sesión. 2) Pulsa <b>Fijar cámara</b>. 3) Fotografía la tarjeta gris en el círculo amarillo${cfg.useRef ? ' y el objeto de referencia en el círculo verde' : ''}.` : '';
+  $('#btn-cam-back').textContent = ses ? '← Cancelar calibración' : '← Volver al cuestionario';
   setMode('live');
   renderShots();
   startCamera();
@@ -627,7 +759,8 @@ function setMode(m){
   $('#cam-live-ctrls').hidden = m !== 'live';
   $('#cam-review').hidden = m !== 'review';
   $('#stage-msg').hidden = !liveMsg || m !== 'live';
-  $('#cam-count').textContent = `Foto ${Math.min(cur.shots.length + 1, cfg.photos)} de ${cfg.photos}`;
+  $('#cam-count').textContent = purpose === 'session' ? 'Calibración de sesión'
+    : `Foto ${Math.min(cur.shots.length + 1, cfg.photos)} de ${cfg.photos}`;
   drawOverlay();
 }
 
@@ -666,7 +799,7 @@ async function startCamera(){
   try { await video.play(); } catch(e){}
   await new Promise(res => video.videoWidth ? res() : video.addEventListener('loadedmetadata', res, { once: true }));
   stageMsg('');
-  $('#btn-capture').disabled = false;
+  $('#btn-capture').disabled = false; $('#btn-lock').disabled = false;
   if (cam.caps.torch){ try { await cam.track.applyConstraints({ advanced: [{ torch: false }] }); } catch(e){} }
   cam.locked = false;
   if (cfg.reapplyLock && cfg.camLock){ cam.locked = await applyLock(cfg.camLock); }
@@ -701,7 +834,7 @@ async function applyLock(vals){
 $('#btn-lock').onclick = async () => {
   if (!cam.track) return;
   if (cam.locked){
-    if (!confirm('La cámara ya está fijada. ¿Volver a medir con la luz actual? Hazlo solo al inicio de la sesión.')) return;
+    if (!confirm('La cámara ya está fijada. ¿Volver a medir con la luz actual? Hazlo solo al inicio de la sesión y recalibra después.')) return;
     try { await cam.track.applyConstraints({ advanced: [{ exposureMode: 'continuous', whiteBalanceMode: 'continuous' }] }); } catch(e){}
     cam.locked = false; renderCaps();
     stageMsg('Reajustando… apunta a la piel y la tarjeta 2 segundos.');
@@ -717,7 +850,7 @@ $('#btn-lock').onclick = async () => {
     cfg.camLock = { exposureTime: st.exposureTime != null ? st.exposureTime : vals.exposureTime, iso: st.iso != null ? st.iso : vals.iso, colorTemperature: st.colorTemperature != null ? st.colorTemperature : vals.colorTemperature };
     saveCfg();
   } else {
-    alert('Este navegador no permite fijar la exposición ni el balance de blancos. Usa la tarjeta gris en cada foto.');
+    alert('Este navegador no permite fijar la exposición ni el balance de blancos. La tarjeta gris corregirá cada foto.');
   }
   renderCaps();
 };
@@ -730,7 +863,6 @@ function renderCaps(){
     h += `<span class="badge ${wb ? 'b-ok' : 'b-warn'}">Balance de blancos ${wb ? 'fijable' : 'automático'}</span>`;
     h += cam.locked ? `<span class="badge b-info">Fijada: ${esc(camLockText(cfg.camLock || {}))}</span>` : `<span class="badge b-warn">Cámara sin fijar</span>`;
   }
-  h += cfg.grayCard ? `<span class="badge b-info">Tarjeta gris activa</span>` : `<span class="badge b-warn">Sin tarjeta gris</span>`;
   $('#cam-caps').innerHTML = h;
   $('#btn-lock').textContent = cam.locked ? 'Volver a fijar' : 'Fijar cámara';
 }
@@ -744,7 +876,7 @@ $('#btn-capture').onclick = () => {
   const s = cam.settings;
   setPending(c, 'camara_web', {
     locked: !!cam.locked, exposureMode: s.exposureMode, exposureTime: s.exposureTime, iso: s.iso,
-    whiteBalanceMode: s.whiteBalanceMode, colorTemperature: s.colorTemperature, torch: s.torch
+    whiteBalanceMode: s.whiteBalanceMode, colorTemperature: s.colorTemperature
   });
 };
 $('#btn-file').onclick = () => $('#file-in').click();
@@ -753,7 +885,8 @@ $('#file-in').onchange = async e => {
   if (!f) return;
   try {
     const url = URL.createObjectURL(f);
-    const img = new Image(); img.src = url; await img.decode();
+    const img = new Image();
+    await new Promise((res, rej) => { img.onload = res; img.onerror = rej; img.src = url; });
     let W = img.naturalWidth, H = img.naturalHeight;
     const s = Math.min(1, 4000/Math.max(W, H)); W = Math.round(W*s); H = Math.round(H*s);
     const c = document.createElement('canvas'); c.width = W; c.height = H;
@@ -771,25 +904,60 @@ function setPending(canvas, source, camInfo){
   renderShotResult();
 }
 function flagBadges(flags){
-  return flags.map(f => { const [lvl, txt] = FLAG_INFO[f] || ['warn', f]; return `<span class="badge b-${lvl}">${esc(txt)}</span>`; }).join('');
+  return flags.map(f => { const [l, txt] = FLAG_INFO[f] || ['warn', f]; return `<span class="badge b-${l === 'block' ? 'bad' : l}">${esc(txt)}</span>`; }).join('');
 }
+
+// En calibración solo importan la tarjeta (y la referencia si se usa)
+function sessionFlags(r){
+  return r.flags.filter(f => cfg.useRef || !/^(piel_|b_bajo|roi_)/.test(f));
+}
+function sessionDrift(r){
+  const base = baselineSession(), flags = [], out = { base: null };
+  if (!base || !r.grayRaw) return { flags, out };
+  out.base = base.session_id;
+  out.gray_dL = r.grayRaw.L - base.gray_raw_L;
+  if (Math.abs(out.gray_dL) > 3) flags.push('deriva_exposicion');
+  if (cfg.useRef && base.ref_used && r.ok){
+    out.ref_dE = dE76(r, { L: base.ref_L, a: base.ref_a, b: base.ref_b });
+    out.ref_dITA = r.ITA - base.ref_ITA;
+    if (out.ref_dE > 3 || Math.abs(out.ref_dITA) > 2) flags.push('deriva_referencia');
+  }
+  return { flags, out };
+}
+
 function renderShotResult(){
   const r = pending.result;
-  if (!r.ok){ $('#shot-result').innerHTML = `<div class="alert bad">No se pudo analizar la imagen.</div>`; $('#btn-accept').disabled = true; return; }
-  const bad = r.flags.some(f => (FLAG_INFO[f] || [])[0] === 'bad');
-  const cat = itaCat(r.ITA);
-  $('#shot-result').innerHTML = `
-    <div class="row"><div class="grow"><div class="big">${fmt(r.ITA)}°</div><div>${esc(cat.es)}</div></div>
-    <div class="small muted" style="text-align:right">L* ${fmt(r.L)} · a* ${fmt(r.a)} · b* ${fmt(r.b)}<br>${r.nPixels.toLocaleString('es')} px · DE L* ${fmt(r.sdL)}</div></div>
-    <div style="margin-top:6px">${flagBadges(r.flags) || '<span class="badge b-ok">Calidad correcta</span>'}</div>
-    ${bad ? '<div class="alert bad">Se recomienda repetir la foto.</div>' : ''}
-    <p class="small muted">Toca la imagen para mover el círculo seleccionado; el cálculo se actualiza.</p>`;
-  $('#btn-accept').disabled = false;
+  const ses = purpose === 'session';
+  const flags = ses ? sessionFlags(r) : r.flags;
+  const blocks = blockingFlags(flags);
+  if (!r.ok && !ses){ $('#shot-result').innerHTML = `<div class="alert bad">No se pudo analizar la imagen.</div>`; $('#btn-accept').disabled = true; return; }
+  const bad = flags.some(f => lvl(f) === 'bad');
+  let body;
+  if (ses){
+    const d = sessionDrift(r);
+    const g = r.grayRaw;
+    body = `<b>Tarjeta gris (sin corregir)</b>
+      <p class="small">L* ${fmt(g && g.L)} · a* ${fmt(g && g.a)} · b* ${fmt(g && g.b)}${d.out.base ? ` · ΔL* vs base ${fmt(d.out.gray_dL)}` : ' · esta será la sesión base'}</p>
+      ${cfg.useRef && r.ok ? `<b>Referencia</b><p class="small">ITA ${fmt(r.ITA)}° · L* ${fmt(r.L)} · a* ${fmt(r.a)} · b* ${fmt(r.b)}${d.out.ref_dE != null ? ` · ΔE vs base ${fmt(d.out.ref_dE)} · ΔITA ${fmt(d.out.ref_dITA)}°` : ''}</p>` : ''}
+      <div>${flagBadges(flags.concat(d.flags)) || '<span class="badge b-ok">Calibración correcta</span>'}</div>`;
+  } else {
+    const cat = itaCat(r.ITA);
+    body = `<div class="row"><div class="grow"><div class="big">${fmt(r.ITA)}°</div><div>${esc(cat.es)}</div></div>
+      <div class="small muted" style="text-align:right">L* ${fmt(r.L)} · a* ${fmt(r.a)} · b* ${fmt(r.b)}<br>${r.nPixels.toLocaleString('es')} px · DE L* ${fmt(r.sdL)}</div></div>
+      <div style="margin-top:6px">${flagBadges(flags) || '<span class="badge b-ok">Calidad correcta</span>'}</div>`;
+  }
+  $('#shot-result').innerHTML = body
+    + (blocks.length ? '<div class="alert bad">No se puede aceptar: corrige lo marcado y repite la foto (o mueve el círculo tocando la imagen).</div>'
+       : bad ? '<div class="alert bad">Se recomienda repetir la foto.</div>' : '')
+    + '<p class="small muted">Toca la imagen para mover el círculo seleccionado; el cálculo se actualiza.</p>';
+  $('#btn-accept').disabled = blocks.length > 0;
 }
 $('#btn-retake').onclick = () => { pending = null; setMode('live'); if (!cam.stream) startCamera(); };
 $('#btn-accept').onclick = () => {
   const r = pending.result;
-  if (r.flags.some(f => (FLAG_INFO[f] || [])[0] === 'bad') && !confirm('Esta foto tiene problemas de calidad. ¿Aceptarla de todas formas?')) return;
+  if (purpose === 'session'){ acceptSession(r); return; }
+  if (blockingFlags(r.flags).length) return;
+  if (r.flags.some(f => lvl(f) === 'bad') && !confirm('Esta foto tiene problemas de calidad. ¿Aceptarla de todas formas?')) return;
   cur.shots.push({
     ITA: r.ITA, L: r.L, a: r.a, b: r.b, ITA_uncorrected: r.ITA_uncorrected,
     grayUsed: r.grayUsed, gains: r.gains, flags: r.flags.slice(), source: pending.source,
@@ -799,16 +967,51 @@ $('#btn-accept').onclick = () => {
   if (cur.shots.length >= cfg.photos){ show('sum'); return; }
   setMode('live'); renderShots();
 };
+function acceptSession(r){
+  const flags = sessionFlags(r);
+  if (blockingFlags(flags).length) return;
+  const d = sessionDrift(r);
+  const now = new Date(), c = pending.cam || {};
+  const p = n => String(n).padStart(2, '0');
+  const allFlags = flags.concat(d.flags);
+  if (!c.locked) allFlags.push('camara_sin_fijar');
+  const s = {
+    session_id: `S-${now.getFullYear()}${p(now.getMonth()+1)}${p(now.getDate())}-${p(now.getHours())}${p(now.getMinutes())}`,
+    timestamp: isoLocal(now), date: today(), operator: cfg.operator, device_label: cfg.device,
+    capture_source: pending.source, cam_locked: !!c.locked, cam_exposure_mode: c.exposureMode, cam_exposure_time: c.exposureTime,
+    cam_iso: c.iso, cam_wb_mode: c.whiteBalanceMode, cam_color_temp: c.colorTemperature, image_size: `${r.W || pending.canvas.width}x${r.H || pending.canvas.height}`,
+    gray_lin_r: r.grayRaw.r, gray_lin_g: r.grayRaw.g, gray_lin_b: r.grayRaw.b,
+    gray_raw_L: r.grayRaw.L, gray_raw_a: r.grayRaw.a, gray_raw_b: r.grayRaw.b,
+    ref_used: !!(cfg.useRef && r.ok),
+    ref_L: cfg.useRef && r.ok ? r.L : null, ref_a: cfg.useRef && r.ok ? r.a : null, ref_b: cfg.useRef && r.ok ? r.b : null,
+    ref_ITA: cfg.useRef && r.ok ? r.ITA : null,
+    baseline_session_id: d.out.base || '', gray_dL_vs_baseline: d.out.gray_dL, ref_dE_vs_baseline: d.out.ref_dE, ref_dITA_vs_baseline: d.out.ref_dITA,
+    quality_flags: [...new Set(allFlags)].join(';'), user_agent: navigator.userAgent, app_version: APP_VERSION
+  };
+  sessions.push(s); saveRecords();
+  pending = null;
+  if (afterCalib){ afterCalib = false; $('#btn-new').click(); }
+  else show('home');
+}
 function renderShots(){
-  $('#shots').innerHTML = cur.shots.map((s, i) => `<span class="badge b-info">#${i+1}: ${fmt(s.ITA)}°</span>`).join('');
-  $('#btn-finish-early').hidden = !(cur.shots.length > 0 && cur.shots.length < cfg.photos);
+  const shots = purpose === 'participant' && cur ? cur.shots : [];
+  $('#shots').innerHTML = shots.map((s, i) => `<span class="badge b-info">#${i+1}: ${fmt(s.ITA)}°</span>`).join('');
+  $('#btn-finish-early').hidden = !(purpose === 'participant' && shots.length > 0 && shots.length < cfg.photos);
 }
 $('#btn-finish-early').onclick = () => show('sum');
-$('#btn-cam-back').onclick = () => { renderFitz(); show('fitz'); };
+$('#btn-cam-back').onclick = () => {
+  if (purpose === 'session'){ afterCalib = false; purpose = 'participant'; show('home'); return; }
+  renderFitz(); show('fitz');
+};
 
 /* ---------- resumen ---------- */
 const mean = a => a.reduce((s, v) => s + v, 0) / a.length;
 const sd = a => a.length < 2 ? null : Math.sqrt(a.reduce((s, v) => s + (v - mean(a))**2, 0) / (a.length - 1));
+function coloValues(){
+  const L = num(cur.colo.L), a = num(cur.colo.a), b = num(cur.colo.b);
+  const n = [L, a, b].filter(v => v != null).length;
+  return { L, a, b, complete: n === 3, partial: n > 0 && n < 3, ITA: n === 3 ? itaDeg(L, b) : null };
+}
 function buildRecord(){
   const S = cur.shots, fz = fitzResult();
   const itas = S.map(s => s.ITA);
@@ -817,9 +1020,12 @@ function buildRecord(){
   if (ITA_sd != null && ITA_sd > 3) flags.add('variabilidad_alta');
   const cat = itaCat(ITA_mean);
   const c0 = (S[0] && S[0].cam) || {};
+  const ses = activeSession();
+  const co = coloValues();
   const rec = {
     uid: cur.uid,
     participant_id: cur.participant_id,
+    session_id: ses ? ses.session_id : '',
     timestamp: cur.timestamp,
     photo_time_first: S[0] ? S[0].time : '',
     operator: cfg.operator,
@@ -840,6 +1046,10 @@ function buildRecord(){
     image_size: S[0] ? `${S[0].W}x${S[0].H}` : '',
     quality_flags: [...flags].join(';'),
     fitz_score: fz.score, fitz_type: fz.type ? ROMAN[fz.type-1] : '', fitz_type_num: fz.type,
+    monk_mst: cur.monk,
+    colorimeter_instrument: co.complete ? cur.colo.inst.trim() : '',
+    colorimeter_L: co.complete ? co.L : null, colorimeter_a: co.complete ? co.a : null, colorimeter_b: co.complete ? co.b : null,
+    colorimeter_ITA: co.ITA,
     notes: $('#sum-notes').value.trim(),
     user_agent: navigator.userAgent,
     app_version: APP_VERSION
@@ -847,22 +1057,34 @@ function buildRecord(){
   cur.fitz.forEach((v, i) => rec['fitz_q' + (i+1)] = v);
   return rec;
 }
+function renderColo(){
+  const co = coloValues();
+  if (co.partial){ $('#co-out').innerHTML = '<span class="badge b-warn">Faltan valores: completa L*, a* y b* o déjalos vacíos</span>'; return; }
+  if (!co.complete){ $('#co-out').textContent = ''; return; }
+  const app = cur.shots.length ? mean(cur.shots.map(s => s.ITA)) : null;
+  $('#co-out').innerHTML = `ITA colorímetro <b>${fmt(co.ITA)}°</b>` + (app != null ? ` · app ${fmt(app)}° · diferencia ${fmt(app - co.ITA)}°` : '');
+}
 function renderSummary(){
   $('#sum-notes').value = cur.notes || '';
+  $('#co-inst').value = cur.colo.inst || '';
+  $('#co-L').value = cur.colo.L; $('#co-a').value = cur.colo.a; $('#co-b').value = cur.colo.b;
+  renderColo();
   if (!cur.shots.length){ $('#sum-body').innerHTML = '<p>No hay fotos aceptadas.</p>'; $('#sum-save').disabled = true; return; }
   $('#sum-save').disabled = false;
   const r = buildRecord();
   const flags = r.quality_flags ? r.quality_flags.split(';') : [];
   $('#sum-body').innerHTML = `
-    <p class="muted small">${esc(r.participant_id)} · ${esc(r.timestamp.replace('T',' ').slice(0,16))}</p>
+    <p class="muted small">${esc(r.participant_id)} · ${esc(r.timestamp.replace('T',' ').slice(0,16))} · sesión ${esc(r.session_id || '—')}</p>
     <div class="stats">
       <div class="stat"><b>${fmt(r.ITA_mean)}°</b><span>ITA medio${r.ITA_sd != null ? ' ± ' + fmt(r.ITA_sd) : ''} · ${esc(r.ITA_category_es)}</span></div>
       <div class="stat"><b>Tipo ${esc(r.fitz_type)}</b><span>Fitzpatrick · puntaje ${r.fitz_score}/40</span></div>
+      <div class="stat"><b>MST ${esc(r.monk_mst)}</b><span>Escala Monk</span></div>
     </div>
     <p class="small" style="margin-top:10px">L* ${fmt(r.L_mean)} · a* ${fmt(r.a_mean)} · b* ${fmt(r.b_mean)} · ${r.n_photos} foto(s): ${esc(r.ITA_per_photo.replace(/;/g, ' · '))}</p>
     <div>${flagBadges(flags) || '<span class="badge b-ok">Sin alertas de calidad</span>'}</div>`;
 }
 $('#sum-notes').oninput = e => { cur.notes = e.target.value; };
+['inst','L','a','b'].forEach(k => $('#co-' + k).addEventListener('input', e => { cur.colo[k] = e.target.value; renderColo(); }));
 $('#sum-back').onclick = () => {
   if (cur.shots.length >= cfg.photos && !confirm('Ya tienes todas las fotos. ¿Reemplazar la última?')) return;
   if (cur.shots.length >= cfg.photos) cur.shots.pop();
@@ -873,38 +1095,50 @@ $('#sum-discard').onclick = () => {
   cur = null; show('home');
 };
 $('#sum-save').onclick = () => {
+  const co = coloValues();
+  if (co.partial){ alert('Completa L*, a* y b* del colorímetro, o deja los tres vacíos.'); $('#co-box').open = true; return; }
+  if (co.complete && cur.colo.inst.trim()){ cfg.instrument = cur.colo.inst.trim(); saveCfg(); }
   cur.notes = $('#sum-notes').value;
   records.push(buildRecord());
   saveRecords();
   cur = null;
+  $('#co-box').open = false;
   $('#btn-new').click();
 };
 
 /* ---------- exportar CSV ---------- */
-const CSV_COLS = ['participant_id','timestamp','photo_time_first','operator','device_label','body_site','n_photos',
+const CSV_COLS = ['participant_id','session_id','timestamp','photo_time_first','operator','device_label','body_site','n_photos',
   'L_mean','a_mean','b_mean','ITA_mean','ITA_sd','ITA_per_photo','ITA_category','ITA_category_es','ITA_uncorrected_mean',
   'gray_card_used','wb_gains_rgb','capture_source','cam_locked','cam_exposure_mode','cam_exposure_time','cam_iso',
   'cam_wb_mode','cam_color_temp','image_size','quality_flags',
   'fitz_q1','fitz_q2','fitz_q3','fitz_q4','fitz_q5','fitz_q6','fitz_q7','fitz_q8','fitz_q9','fitz_q10',
-  'fitz_score','fitz_type','fitz_type_num','notes','user_agent','app_version'];
+  'fitz_score','fitz_type','fitz_type_num','monk_mst',
+  'colorimeter_instrument','colorimeter_L','colorimeter_a','colorimeter_b','colorimeter_ITA',
+  'notes','user_agent','app_version'];
+const SES_COLS = ['session_id','timestamp','date','operator','device_label','capture_source','cam_locked','cam_exposure_mode',
+  'cam_exposure_time','cam_iso','cam_wb_mode','cam_color_temp','image_size',
+  'gray_lin_r','gray_lin_g','gray_lin_b','gray_raw_L','gray_raw_a','gray_raw_b',
+  'ref_used','ref_L','ref_a','ref_b','ref_ITA',
+  'baseline_session_id','gray_dL_vs_baseline','ref_dE_vs_baseline','ref_dITA_vs_baseline',
+  'quality_flags','user_agent','app_version'];
 function csvCell(v){
   if (v == null) return '';
-  if (typeof v === 'number') return isFinite(v) ? (Number.isInteger(v) ? String(v) : v.toFixed(3)) : '';
+  if (typeof v === 'number') return isFinite(v) ? (Number.isInteger(v) ? String(v) : v.toFixed(4)) : '';
   if (typeof v === 'boolean') return v ? 'true' : 'false';
   const s = String(v);
   return /[",\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
 }
-function exportCSV(){
-  if (!records.length){ alert('No hay registros para exportar.'); return; }
-  const lines = [CSV_COLS.join(',')].concat(records.map(r => CSV_COLS.map(c => csvCell(r[c])).join(',')));
+function exportCSV(rows, cols, kind, emptyMsg){
+  if (!rows.length){ alert(emptyMsg); return; }
+  const lines = [cols.join(',')].concat(rows.map(r => cols.map(c => csvCell(r[c])).join(',')));
   const blob = new Blob(['﻿' + lines.join('\r\n') + '\r\n'], { type: 'text/csv;charset=utf-8' });
   const d = new Date(), p = n => String(n).padStart(2, '0');
-  const name = `ita_fitzpatrick_${cfg.device ? cfg.device.replace(/[^\w-]+/g, '_') + '_' : ''}${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}_${p(d.getHours())}${p(d.getMinutes())}.csv`;
+  const name = `ita_${kind}_${cfg.device ? cfg.device.replace(/[^\w-]+/g, '_') + '_' : ''}${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}_${p(d.getHours())}${p(d.getMinutes())}.csv`;
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob); a.download = name;
   document.body.appendChild(a); a.click(); a.remove();
   setTimeout(() => URL.revokeObjectURL(a.href), 4000);
-  records.forEach(r => r._exported = true); saveRecords(); renderHome();
+  rows.forEach(r => r._exported = true); saveRecords(); renderHome();
 }
 
 /* ---------- arranque ---------- */
@@ -913,7 +1147,7 @@ document.addEventListener('visibilitychange', () => { if (document.hidden) stopC
 if ('serviceWorker' in navigator && window.isSecureContext){ navigator.serviceWorker.register('sw.js').catch(() => {}); }
 
 // Ganchos para pruebas
-window.__ita = { linToLab, itaDeg, itaCat, analyze, fitzType, LIN, cfg: () => cfg };
+window.__ita = { linToLab, itaDeg, itaCat, analyze, fitzType, LIN, cfg: () => cfg, sessions: () => sessions, records: () => records };
 
 show('home');
 })();
